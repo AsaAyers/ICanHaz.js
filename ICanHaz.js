@@ -467,23 +467,57 @@ var Mustache = function () {
                 }
                 return;
             }
-            if (ich[name]) {
-                console.error("Invalid name: " + name + "."); 
-            } else if (ich.templates[name]) {
-                console.error("Template \"" + name + "  \" exists");
-            } else {
-                ich.templates[name] = templateString;
-                ich[name] = function (data, raw) {
-                    data = data || {};
-                    var result = Mustache.to_html(ich.templates[name], data, ich.templates);
-                    return (ich.$ && !raw) ? ich.$(result) : result;
-                };
-            }
+
+			var parent_obj = ich;
+			var fn_name = name;
+			if (name.indexOf('.'))
+			{
+				var path = name.split('.');
+				// The last section will be the final function name.
+				fn_name = path.pop();
+
+				for (var i in path)
+				{
+					var tmp_name = path[i];
+					if (typeof(parent_obj[tmp_name]) == 'undefined' )
+					{
+						parent_obj[tmp_name] = {};
+					}
+					// this will prevent you from defining templates like this:
+					// id="namespace.template"
+					// id="namespace.template.templateB"
+					// Without this check the first template would get replaced
+					// by an object.
+					else if (typeof(parent_obj[tmp_name]) == 'function' )
+					{
+						console.error("Invalid name: " + name + "."); 
+						return;
+					}
+					parent_obj = parent_obj[tmp_name];
+				}
+
+			}
+
+			if (parent_obj[fn_name]) {
+				console.error("Invalid name: " + name + "."); 
+			} else if (ich.templates[name]) {
+				console.error("Template \"" + name + "  \" exists");
+			} else {
+				ich.templates[name] = templateString;
+				parent_obj[fn_name] = function (data, raw) {
+					data = data || {};
+					var result = Mustache.to_html(ich.templates[name], data, ich.templates);
+					return (ich.$ && !raw) ? ich.$(result) : result;
+				};
+			}
         },
         
         // clears all retrieval functions and empties cache
         clearAll: function () {
             for (var key in ich.templates) {
+				// With the dot namespacing the top level has to be deleted.
+				// split will just return the whole key if there is no dot.
+				key = key.split('.')[0];
                 delete ich[key];
             }
             ich.templates = {};

@@ -12,6 +12,12 @@ test("creates function for template", function() {
   ok(ich.test1, "test1 template exists");
 });
 
+test("creates dot namespaced templates", function(){
+  expect(2);
+  ok(ich.namespace.templateA, "test1 template exists");
+  ok(ich.namespace.templateB, "test1 template exists");
+})
+
 test("renders non-parameterized templates", function() {
   expect(1);
   equal(ich.test1({}, true), "<p>This is a test of the emergency broadcast system.</p>"); // raw text
